@@ -9,10 +9,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class JiebaDict {
 
@@ -66,7 +64,10 @@ public class JiebaDict {
             }
             long remoteLastModified = 0;
             try {
-                remoteLastModified = Long.parseLong(lastModifiedHeader);
+                String pattern = "EEE, dd MMM yyyy HH:mm:ss z";
+                SimpleDateFormat format = new SimpleDateFormat(pattern);
+                Date lastModifiedDate = format.parse(lastModifiedHeader);
+                remoteLastModified = lastModifiedDate.getTime();
             }catch (Exception ignore){}
             File file = new File(environment.pluginsFile().resolve("jieba/dic").toFile().getAbsolutePath() + "/remote.ext.dic");
             long localLastModified = file.lastModified();
