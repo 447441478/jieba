@@ -52,6 +52,7 @@ public class JiebaDict {
             Object remoteDic = properties.getOrDefault("remote.ext.dic", "");
             String remoteUrl = remoteDic.toString();
             if(!remoteUrl.startsWith("http")){
+                System.out.println("remote dic url invalid remoteUrl:" + remoteUrl);
                 return;
             }
             URL url = new URL(remoteUrl);
@@ -59,12 +60,14 @@ public class JiebaDict {
             connection.setConnectTimeout(2000);  // 设置连接超时时间为2秒
             connection.setReadTimeout(5000);   // 设置读取超时时间为5秒
             String lastModifiedHeader = connection.getHeaderField("Last-Modified");
-            long remoteLastModified = 0;
-            if(Objects.nonNull(lastModifiedHeader)){
-                try {
-                    remoteLastModified = Long.parseLong(lastModifiedHeader);
-                }catch (Exception ignore){}
+            if(Objects.isNull(lastModifiedHeader)){
+                System.out.println("remote dic header not Last-Modified");
+                return;
             }
+            long remoteLastModified = 0;
+            try {
+                remoteLastModified = Long.parseLong(lastModifiedHeader);
+            }catch (Exception ignore){}
             File file = new File(environment.pluginsFile().resolve("jieba/dic").toFile().getAbsolutePath() + "/remote.ext.dic");
             long localLastModified = file.lastModified();
             if(localLastModified == remoteLastModified){
