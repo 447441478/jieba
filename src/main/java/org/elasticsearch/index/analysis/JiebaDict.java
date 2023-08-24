@@ -5,11 +5,9 @@ import com.huaban.analysis.jieba.WordDictionary;
 import org.elasticsearch.env.Environment;
 
 import java.io.*;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
-import java.text.SimpleDateFormat;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -59,6 +57,7 @@ public class JiebaDict {
             URLConnection connection = url.openConnection();
             connection.setConnectTimeout(2000);  // 设置连接超时时间为2秒
             connection.setReadTimeout(5000);   // 设置读取超时时间为5秒
+
             String lastModifiedHeader = connection.getHeaderField("Last-Modified");
             if(Objects.isNull(lastModifiedHeader)){
                 System.out.println("remote dic header not Last-Modified");
@@ -70,7 +69,7 @@ public class JiebaDict {
                 ZonedDateTime zonedDateTime = ZonedDateTime.parse(lastModifiedHeader, formatter);
                 remoteLastModified = zonedDateTime.toInstant().getEpochSecond()*1000;
             }catch (Exception ignore){}
-            File file = new File(environment.pluginsFile().resolve("jieba/dic").toFile().getAbsolutePath() + "/remote.ext.dic");
+            File file = new File(environment.pluginsFile().resolve("jieba/dic").toFile().getAbsolutePath() + "/remote.ext.dict");
             if(!file.exists()){
                 file.createNewFile();
             }
