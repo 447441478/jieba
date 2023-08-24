@@ -1,7 +1,6 @@
 package com.huaban.analysis.jieba;
 
 import java.io.*;
-import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.Map.Entry;
@@ -50,7 +49,7 @@ public class WordDictionary {
         return instance.loadedPath.size() != count;
     }
 
-    public static synchronized void reload(File configFile){
+    public static synchronized void reload(File configFile, ByteArrayOutputStream byteArrayOutputStream){
         if(Objects.isNull(configFile)){
             return;
         }
@@ -60,6 +59,7 @@ public class WordDictionary {
         }
         WordDictionary wordDictionary = new WordDictionary();
         wordDictionary.init(configFile, wordDictionary);
+        wordDictionary.loadRemoteDict(byteArrayOutputStream);
         WordDictionary.singleton = wordDictionary;
     }
 
@@ -136,6 +136,35 @@ public class WordDictionary {
 
     public void loadUserDict(File userDict) {
         loadUserDict(userDict, Charset.forName("UTF-8"));
+    }
+
+    private void  loadRemoteDict(ByteArrayOutputStream byteArrayOutputStream){
+        if(Objects.isNull(byteArrayOutputStream)){
+            System.out.println("remote dict is null");
+            return;
+        }
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()), "UTF-8"));
+            long s = System.currentTimeMillis();
+            int count = 0;
+            while (br.ready()) {
+                String line = br.readLine();
+                String[] tokens = line.split("[\t ]+");
+
+                if (tokens.length < 2)
+                    continue;
+
+                String word = tokens[0];
+                double freq = Double.valueOf(tokens[1]);
+                word = addWord(word);
+                freqs.put(word, Math.log(freq / total));
+                count++;
+            }
+            System.out.println(String.format("user remote dict load finished, tot words:%d, time elapsed:%dms",
+                     count, System.currentTimeMillis() - s));
+        }catch (Exception e){
+            System.err.println(String.format("remote load dict failure!"));
+        }
     }
 
 

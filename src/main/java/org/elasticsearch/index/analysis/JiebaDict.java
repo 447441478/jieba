@@ -15,6 +15,8 @@ import java.util.*;
 public class JiebaDict {
 
     private static JiebaDict singleton;
+    private static long lastModified = 0;
+    private static ByteArrayOutputStream remoteDict = null;
 
     public static JiebaDict init(Environment environment) {
         if (singleton == null) {
@@ -25,9 +27,9 @@ public class JiebaDict {
                         @Override
                         public void run() {
                             System.out.println("start to load remote dict");
-                            loadRemoteDic(environment);
+                            ByteArrayOutputStream byteArrayOutputStream = loadRemoteDic(environment);
                             System.out.println("start to load local dict");
-                            WordDictionary.reload(environment.pluginsFile().resolve("jieba/dic").toFile());
+                            WordDictionary.reload(environment.pluginsFile().resolve("jieba/dic").toFile(), byteArrayOutputStream);
 //                            WordDictionary.getInstance()
 //                                    .init(environment.pluginsFile().resolve("jieba/dic").toFile());
                         }
@@ -43,7 +45,7 @@ public class JiebaDict {
         return singleton;
     }
 
-    private static void loadRemoteDic(Environment environment) {
+    private static ByteArrayOutputStream loadRemoteDic(Environment environment) {
         Properties properties = new Properties();
         try {
             properties.load(Files.newInputStream(environment.pluginsFile().resolve("jieba/jieba.cfg.properties").toFile().toPath()));
@@ -51,7 +53,7 @@ public class JiebaDict {
             String remoteUrl = remoteDic.toString();
             if(!remoteUrl.startsWith("http")){
                 System.out.println("remote dic url invalid remoteUrl:" + remoteUrl);
-                return;
+                return remoteDict;
             }
             URL url = new URL(remoteUrl);
             URLConnection connection = url.openConnection();
@@ -61,7 +63,7 @@ public class JiebaDict {
             String lastModifiedHeader = connection.getHeaderField("Last-Modified");
             if(Objects.isNull(lastModifiedHeader)){
                 System.out.println("remote dic header not Last-Modified");
-                return;
+                return remoteDict;
             }
             long remoteLastModified = 0;
             try {
@@ -69,26 +71,26 @@ public class JiebaDict {
                 ZonedDateTime zonedDateTime = ZonedDateTime.parse(lastModifiedHeader, formatter);
                 remoteLastModified = zonedDateTime.toInstant().getEpochSecond()*1000;
             }catch (Exception ignore){}
-            File file = new File(environment.pluginsFile().resolve("jieba/dic").toFile().getAbsolutePath() + "/remote.ext.dict");
-            if(!file.exists()){
-                file.createNewFile();
-            }
-            long localLastModified = file.lastModified();
-            if(localLastModified == remoteLastModified){
-                return;
+
+            if(lastModified == remoteLastModified){
+                return remoteDict;
             }
             InputStream inputStream = connection.getInputStream();
-            try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
-                byte[] buf = new byte[4096];
-                int len;
-                while ((len = inputStream.read(buf)) != -1) {
-                    fileOutputStream.write(buf,0, len);
-                }
-                fileOutputStream.flush();
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            byte[] buf = new byte[4096];
+            int len;
+            while ((len = inputStream.read(buf)) != -1) {
+                byteArrayOutputStream.write(buf,0, len);
             }
-            file.setLastModified(remoteLastModified);
+            byteArrayOutputStream.flush();
+            synchronized (JiebaDict.class){
+                lastModified = remoteLastModified;
+                remoteDict = byteArrayOutputStream;
+            }
+            return remoteDict;
         } catch (Exception e) {
             System.err.println(e);
         }
+        return remoteDict;
     }
 }

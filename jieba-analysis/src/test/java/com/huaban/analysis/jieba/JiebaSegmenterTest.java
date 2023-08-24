@@ -110,8 +110,8 @@ public class JiebaSegmenterTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        WordDictionary.reload(new File("conf"));
-        WordDictionary.reload(new File("conf"));
+        WordDictionary.reload(new File("conf"), null);
+        WordDictionary.reload(new File("conf"), null);
     }
 
 
