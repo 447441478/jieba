@@ -10,6 +10,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class JiebaDict {
@@ -64,12 +66,14 @@ public class JiebaDict {
             }
             long remoteLastModified = 0;
             try {
-                String pattern = "EEE, dd MMM yyyy HH:mm:ss z";
-                SimpleDateFormat format = new SimpleDateFormat(pattern);
-                Date lastModifiedDate = format.parse(lastModifiedHeader);
-                remoteLastModified = lastModifiedDate.getTime();
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
+                ZonedDateTime zonedDateTime = ZonedDateTime.parse(lastModifiedHeader, formatter);
+                remoteLastModified = zonedDateTime.toInstant().getEpochSecond()*1000;
             }catch (Exception ignore){}
             File file = new File(environment.pluginsFile().resolve("jieba/dic").toFile().getAbsolutePath() + "/remote.ext.dic");
+            if(!file.exists()){
+                file.createNewFile();
+            }
             long localLastModified = file.lastModified();
             if(localLastModified == remoteLastModified){
                 return;
@@ -77,8 +81,9 @@ public class JiebaDict {
             InputStream inputStream = connection.getInputStream();
             try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
                 byte[] buf = new byte[4096];
-                while (inputStream.read(buf) != -1) {
-                    fileOutputStream.write(buf);
+                int len;
+                while ((len = inputStream.read(buf)) != -1) {
+                    fileOutputStream.write(buf,0, len);
                 }
                 fileOutputStream.flush();
             }
@@ -86,15 +91,5 @@ public class JiebaDict {
         } catch (Exception e) {
             System.err.println(e);
         }
-    }
-
-    public static void main(String[] args) throws IOException {
-        String remoteUrl = "https://apifox.com/apidoc/shared-7c812aad-8a60-4c09-8863-6d32f3242d16/doc-1669347";
-        URL url = new URL(remoteUrl);
-        URLConnection connection = url.openConnection();
-        connection.setConnectTimeout(2000);  // 设置连接超时时间为2秒
-        connection.setReadTimeout(5000);   // 设置读取超时时间为5秒
-        long remoteLastModified = connection.getLastModified();
-        System.out.println(remoteLastModified);
     }
 }
