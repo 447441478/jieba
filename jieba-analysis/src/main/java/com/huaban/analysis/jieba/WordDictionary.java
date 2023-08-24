@@ -49,11 +49,11 @@ public class WordDictionary {
         return instance.loadedPath.size() != count;
     }
 
-    public static synchronized void reload(File configFile, ByteArrayOutputStream byteArrayOutputStream){
+    public static synchronized void reload(File configFile, boolean remoteChange, ByteArrayOutputStream byteArrayOutputStream){
         if(Objects.isNull(configFile)){
             return;
         }
-        if(!getInstance().checkModify(configFile)){
+        if(!getInstance().checkModify(configFile) && !remoteChange){
             System.out.println("user dic not modify");
             return;
         }

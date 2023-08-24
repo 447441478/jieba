@@ -27,9 +27,9 @@ public class JiebaDict {
                         @Override
                         public void run() {
                             System.out.println("start to load remote dict");
-                            ByteArrayOutputStream byteArrayOutputStream = loadRemoteDic(environment);
+                            boolean remoteChange = loadRemoteDic(environment);
                             System.out.println("start to load local dict");
-                            WordDictionary.reload(environment.pluginsFile().resolve("jieba/dic").toFile(), byteArrayOutputStream);
+                            WordDictionary.reload(environment.pluginsFile().resolve("jieba/dic").toFile(), remoteChange, remoteDict);
 //                            WordDictionary.getInstance()
 //                                    .init(environment.pluginsFile().resolve("jieba/dic").toFile());
                         }
@@ -45,7 +45,7 @@ public class JiebaDict {
         return singleton;
     }
 
-    private static ByteArrayOutputStream loadRemoteDic(Environment environment) {
+    private static boolean loadRemoteDic(Environment environment) {
         Properties properties = new Properties();
         try {
             properties.load(Files.newInputStream(environment.pluginsFile().resolve("jieba/jieba.cfg.properties").toFile().toPath()));
@@ -53,7 +53,7 @@ public class JiebaDict {
             String remoteUrl = remoteDic.toString();
             if(!remoteUrl.startsWith("http")){
                 System.out.println("remote dic url invalid remoteUrl:" + remoteUrl);
-                return remoteDict;
+                return false;
             }
             URL url = new URL(remoteUrl);
             URLConnection connection = url.openConnection();
@@ -63,7 +63,7 @@ public class JiebaDict {
             String lastModifiedHeader = connection.getHeaderField("Last-Modified");
             if(Objects.isNull(lastModifiedHeader)){
                 System.out.println("remote dic header not Last-Modified");
-                return remoteDict;
+                return false;
             }
             long remoteLastModified = 0;
             try {
@@ -73,7 +73,7 @@ public class JiebaDict {
             }catch (Exception ignore){}
 
             if(lastModified == remoteLastModified){
-                return remoteDict;
+                return false;
             }
             InputStream inputStream = connection.getInputStream();
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -87,10 +87,10 @@ public class JiebaDict {
                 lastModified = remoteLastModified;
                 remoteDict = byteArrayOutputStream;
             }
-            return remoteDict;
+            return true;
         } catch (Exception e) {
             System.err.println(e);
         }
-        return remoteDict;
+        return true;
     }
 }
