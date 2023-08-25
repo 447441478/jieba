@@ -8,6 +8,7 @@ import org.elasticsearch.env.Environment;
 import org.elasticsearch.plugins.PluginsService;
 
 import java.io.*;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
@@ -62,7 +63,8 @@ public class JiebaDict {
                 return false;
             }
             URL url = new URL(remoteUrl);
-            URLConnection connection = url.openConnection();
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
             connection.setConnectTimeout(2000);  // 设置连接超时时间为2秒
             connection.setReadTimeout(5000);   // 设置读取超时时间为5秒
 
