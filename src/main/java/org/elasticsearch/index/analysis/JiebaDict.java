@@ -2,7 +2,10 @@ package org.elasticsearch.index.analysis;
 
 
 import com.huaban.analysis.jieba.WordDictionary;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.env.Environment;
+import org.elasticsearch.plugins.PluginsService;
 
 import java.io.*;
 import java.net.URL;
@@ -13,6 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class JiebaDict {
+    private static final Logger logger = LogManager.getLogger(JiebaDict.class);
 
     private static JiebaDict singleton;
     private static long lastModified = 0;
@@ -26,12 +30,13 @@ public class JiebaDict {
                     TimerTask task = new TimerTask() {
                         @Override
                         public void run() {
-                            System.out.println("start to load remote dict");
+                            logger.info("start to load remote dict");
                             boolean remoteChange = loadRemoteDic(environment);
-                            System.out.println("start to load local dict");
+                            logger.info("start to load local dict");
                             WordDictionary.reload(environment.pluginsFile().resolve("jieba/dic").toFile(), remoteChange, remoteDict);
 //                            WordDictionary.getInstance()
 //                                    .init(environment.pluginsFile().resolve("jieba/dic").toFile());
+                            logger.info("end load local dict");
                         }
                     };
 
@@ -52,6 +57,7 @@ public class JiebaDict {
             Object remoteDic = properties.getOrDefault("remote.ext.dic", "");
             String remoteUrl = remoteDic.toString();
             if(!remoteUrl.startsWith("http")){
+                logger.info("remote dic url invalid remoteUrl:{}", remoteUrl);
                 System.out.println("remote dic url invalid remoteUrl:" + remoteUrl);
                 return false;
             }
@@ -62,6 +68,7 @@ public class JiebaDict {
 
             String lastModifiedHeader = connection.getHeaderField("Last-Modified");
             if(Objects.isNull(lastModifiedHeader)){
+                logger.info("remote dic header not Last-Modified");
                 System.out.println("remote dic header not Last-Modified");
                 return false;
             }
@@ -89,8 +96,9 @@ public class JiebaDict {
             }
             return true;
         } catch (Exception e) {
+            logger.error("load remote dict err", e);
             System.err.println(e);
         }
-        return true;
+        return false;
     }
 }
