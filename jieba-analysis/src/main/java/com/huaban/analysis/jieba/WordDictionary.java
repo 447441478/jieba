@@ -163,7 +163,8 @@ public class WordDictionary {
             System.out.println(String.format("user remote dict load finished, tot words:%d, time elapsed:%dms",
                      count, System.currentTimeMillis() - s));
         }catch (Exception e){
-            System.err.println(String.format("remote load dict failure!"));
+            e.printStackTrace();
+            System.out.println("remote load dict failure!");
         }
     }
 
