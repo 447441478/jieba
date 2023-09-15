@@ -70,6 +70,7 @@ task pz(type: Zip, dependsOn: [':jar']) {
         from 'build/resources/main/plugin.xml'
         from 'build/resources/main/plugin-descriptor.properties'
         from 'build/resources/main/jieba.cfg.properties'
+        from 'build/resources/main/plugin-security.policy'
     }
     from('build/resources/main/') {
         include '**.dict'
