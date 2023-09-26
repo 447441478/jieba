@@ -4,14 +4,16 @@ package org.elasticsearch.index.analysis;
 import com.huaban.analysis.jieba.WordDictionary;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.SpecialPermission;
 import org.elasticsearch.env.Environment;
-import org.elasticsearch.plugins.PluginsService;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
 import java.nio.file.Files;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -51,7 +53,13 @@ public class JiebaDict {
         return singleton;
     }
 
+
     private static boolean loadRemoteDic(Environment environment) {
+        SpecialPermission.check();
+        return AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> loadRemoteDicUnprivileged(environment));
+    }
+
+    private static boolean loadRemoteDicUnprivileged(Environment environment) {
         Properties properties = new Properties();
         try {
             properties.load(Files.newInputStream(environment.pluginsFile().resolve("jieba/jieba.cfg.properties").toFile().toPath()));
